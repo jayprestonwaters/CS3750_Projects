@@ -1,0 +1,24 @@
+a {
+  color: #ade;
+}
+a:hover, body {
+  color: #5ac;
+}
+body {
+	background-color: dimgray;
+}
+h1, h2, h3, h4, h5, h6 {
+  color: azure;
+}
+input#id_username.form-control, input#id_password.form-control {
+  background-color: lightgray;
+}
+th {
+  color: darkcyan;
+}
+tr:nth-child(even) {
+  background-color: lightcyan;
+}
+tr:nth-child(odd) {
+  background-color: aliceblue;
+}

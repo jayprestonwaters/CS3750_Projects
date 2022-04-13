@@ -1,0 +1,434 @@
+﻿@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager NavigationManager
+
+@page "/"
+@using BlazorWebAssemblySignalRApp.Client.Pages.Partials;
+@using BlazorWebAssemblySignalRApp.Shared.Models.Speed;
+@using System.Threading;
+
+@code {
+
+    private HubConnection? hubConnection;
+
+    private void checkForWin()
+    {
+        if (Table.PlayerOneHand.Count() < 1 && Table.PlayerOneDraw.Count() < 1)
+        {
+            NavigationManager.NavigateTo("/win/1");
+        }
+        else if (Table.PlayerTwoHand.Count() < 1 && Table.PlayerTwoDraw.Count() < 1)
+        {
+            NavigationManager.NavigateTo("/win/2");
+        }
+    }
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/speedhub"))
+            .Build();
+
+        hubConnection.On<Table>("ReceiveUpdatedTable", async (table) =>
+        {
+            Table = table;
+            checkForWin();
+            await PullCards();
+            StateHasChanged();
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+
+    public string PlayerGuid => 
+        hubConnection is not null ? this.hubConnection.ConnectionId ?? string.Empty : string.Empty;
+
+    public bool IsPlayerOne =>
+        Table is not null ? PlayerGuid == Table.PlayerOneGuid : false;
+
+    public bool IsNotPlayerOne => 
+        !IsPlayerOne;
+
+    //The card the user is currently dragging
+    public Card? DraggedCard { get; set; }
+
+    public GameStatus Status { get; set; } = GameStatus.NotStarted;
+
+    public Table? Table { get; set; }
+
+    // Added PlayPiles
+    public PlayPile playPile1 = new PlayPile();
+    public PlayPile playPile2 = new PlayPile();
+
+    public Card? FirstCard { get; set; }
+    public Card? SecondCard { get; set; }
+    public Card? ThirdCard { get; set; }
+    public Card? FourthCard { get; set; }
+    public Card? FithCard { get; set; }
+
+    public Card? FirstCard2 { get; set; }
+    public Card? SecondCard2 { get; set; }
+    public Card? ThirdCard2 { get; set; }
+    public Card? FourthCard2 { get; set; }
+    public Card? FithCard2 { get; set; }
+
+    public bool pullEnabled { get; set; }
+
+    public async Task NewGame()
+    {
+        //Set the game status to Playing
+        Status = GameStatus.Playing;        
+
+        Table = new Table();
+        Table.NewGame();
+
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("BeginGame", Table);
+        }
+
+        StateHasChanged();
+    }
+
+    public void HandleDragStart(Card selectedCard)
+    {
+        DraggedCard = selectedCard;
+    }
+
+    public async Task Draw()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("DrawCard", Table, PlayerGuid);
+        }
+    }
+
+    private void MoveActiveCard(PlayPile playPile)
+    {
+        MoveActiveCard(DraggedCard, playPile);
+    }
+
+    // TODO: Add invalid move handling
+    private async Task MoveActiveCard(Card card, PlayPile playPile)
+    {
+        bool pileOne;
+        Card top;
+        if (this.playPile1 == playPile)
+        {
+            pileOne = true;
+            top = Table.PlayOne.Peek();
+        }
+        else
+        {
+            pileOne = false;
+            top = Table.PlayTwo.Peek();
+        }
+
+        //Card? top = pileOne ?
+        //            Table is not null ? Table.PlayOne.Peek() : null
+        //          : Table is not null ? Table.PlayTwo.Peek() : null;
+
+        if (top is not null && ValidMove(card, top))
+        {
+            await PlayCard(card, pileOne);
+        }
+        else
+        {
+            // Invalid move handling
+        }
+    }
+
+    private async Task PlayCard(Card card, bool pileOne)
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("PlayCard", Table, card, PlayerGuid, pileOne);
+        }
+    }
+
+    private async Task PullButton()
+    {
+        await hubConnection.SendAsync("PullCard", Table);
+    }
+
+    private void DisablePull()
+    {
+        pullEnabled = false;
+    }
+
+    private async Task PullCards()
+    {
+        if (Table is not null && hubConnection is not null)
+        {
+            Card? top1 = Table.PlayOne.Peek();
+            Card? top2 = Table.PlayTwo.Peek();
+
+            if (!Table.PlayerOneHand.Any(c => ValidMove(c, top1))
+                && !Table.PlayerTwoHand.Any(c => ValidMove(c, top2)))
+            {
+                //call new method
+                DisablePull();
+            }
+        }
+    }
+
+    private bool ValidMove(Card cardOne, Card cardTwo)
+    {
+        if (cardOne is not null && cardTwo is not null)
+        {
+            int diff = Math.Abs(cardOne.Value - cardTwo.Value);
+            return diff == 1 || diff == 12;
+        }
+        return false;
+    }
+}
+
+
+@if (Status == GameStatus.Playing)
+{
+    <button type="button" class="btn btn-lg btn-outline-success" disabled>Playing Game</button>
+    <hr />
+}
+else
+{   <div class="row"> 
+        <button type="button" class="btn btn-lg btn-block btn-primary" @onclick="() => NewGame()">New Game</button>
+    </div>
+    <hr />
+}
+
+@if (Status == GameStatus.Playing && Table is not null)
+{
+    <div class="row mx-0">
+        @if (IsPlayerOne)
+        {
+            //Show PlayerTwo (opponent) stuff at top
+            <div class="col-2 px-0">
+                <div>
+                    @{
+                        int cardCount1 = Table.PlayerTwoDraw.Count;
+                    }
+                    @if (cardCount1 > 0)
+                    {
+
+                        @*<HiddenCard ClickEvent="@(async () => {await Draw();})" />*@
+                        <div>
+                            <img height="auto" width="50%" src="cards/back.png">
+                        </div>
+                        
+                        <div>
+                            @Table.PlayerTwoDraw.Count()
+                        </div>
+                    }
+                    @if (Table.PlayerTwoDraw.Count == 0)
+                    {
+                        <div @*@onclick="ResetDrawPile" *@>
+                            <img height="auto" width="50%" src="cards/back.png">
+                        </div>
+                    }
+                </div>
+            </div>
+            @foreach (var card in Table.PlayerTwoHand)
+            {
+                <div class="col-2 px-0">
+                    <img height="auto" width="50%" src="cards/back.png">
+                </div>    
+            }
+        }
+        else if (IsNotPlayerOne)
+        {
+            //Show PlayerOne (opponent) stuff at top
+            <div class="col-2 px-0">
+                <div>
+                    @{
+                        int cardCount1 = Table.PlayerOneDraw.Count;
+                    }
+                    @if (cardCount1 > 0)
+                    {
+
+                        @*<HiddenCard ClickEvent="@(async () => {await Draw();})" />*@
+                        <div>
+                            <img height="auto" width="50%" src="cards/back.png">
+                        </div>
+                        <div>
+                            @Table.PlayerOneDraw.Count()
+                        </div>
+                    }
+                    @if (Table.PlayerOneDraw.Count == 0)
+                    {
+                        <div @*@onclick="ResetDrawPile" *@>
+                            <img height="auto" width="50%" src="cards/back.png">
+                        </div>
+                    }
+                </div>
+            </div>
+            @foreach (var card in Table.PlayerOneHand)
+            {
+                <div class="col-2 px-0">
+                    <img height="auto" width="50%" src="cards/back.png">
+                </div>    
+            }
+        }
+    </div>
+    <hr />
+
+    //Card playNew1 = Table.PlayOne.Peek();
+    //Card playNew2 = Table.PlayTwo.Peek();
+
+    <div class="row d-flex justify-content-evenly mx-0">
+        @if (IsPlayerOne)
+        {
+            
+            //PlayerOne (current player) play and pull piles on the left
+            <div class="col-2 px-0">
+                <HiddenCard ClickEvent="@(async () => {await PullCards();})" />
+            </div>
+            @if(Table.GetPlayOneTop != null)
+            {
+                <div class="col-2 px-0">
+                    <div style="height: auto; width: 100%"><PlayPile  PlayPile_1="Table.PlayOne"
+                               Card="Table.GetPlayOneTop"                           
+                               DraggedCard="DraggedCard" 
+                               MoveActiveCardEvent="(() => MoveActiveCard(DraggedCard, playPile1))"
+                               DragStartEvent="(() => HandleDragStart(Table.PlayOne.ElementAt(0)))"/></div>
+                
+                </div>
+            }
+            @if (Table.GetPlayTwoTop != null)
+            {
+                <div class="col-2 px-0" @ondrop="@(async () => {await PlayCard(DraggedCard, true);})">
+                <div style="height: auto; width: 100%"><PlayPile  PlayPile_1="Table.PlayTwo"
+                               Card="Table.GetPlayTwoTop"
+                               DraggedCard="DraggedCard" 
+                               MoveActiveCardEvent="(() => MoveActiveCard(DraggedCard, playPile2))"
+                               DragStartEvent="(() => HandleDragStart(Table.PlayTwo.ElementAt(0)))"/></div>
+                
+                </div>
+            }
+            
+            <div class="col-2 px-0">
+                <HiddenCard ClickEvent="@(async () => {await PullCards();})" />
+            </div>
+        }
+        else if (IsNotPlayerOne)
+        {
+            //PlayerTwo (current player) play and pull piles on the left
+            <div class="col-2 px-0">
+                <HiddenCard ClickEvent="@(async () => {await PullCards();})" />
+            </div>
+            @if(Table.GetPlayTwoTop != null)
+            {
+                <div class="col-2 px-0" @ondrop="@(async () => {await PlayCard(DraggedCard, true);})">
+                <div><PlayPile  PlayPile_1="Table.PlayTwo"
+                               Card="Table.GetPlayTwoTop"
+                               DraggedCard="DraggedCard" 
+                               MoveActiveCardEvent="(() => MoveActiveCard(DraggedCard, playPile2))"
+                               DragStartEvent="(() => HandleDragStart(Table.PlayTwo.ElementAt(0)))"/></div>
+                
+                </div>
+            }
+            @if (Table.GetPlayOneTop != null) 
+            {
+                <div class="col-2 px-0" @ondrop="@(async () => {await PlayCard(DraggedCard, true);})">
+                <div><PlayPile  PlayPile_1="Table.PlayOne"
+                               Card="Table.GetPlayOneTop"                           
+                               DraggedCard="DraggedCard" 
+                               MoveActiveCardEvent="(() => MoveActiveCard(DraggedCard, playPile1))"
+                               DragStartEvent="(() => HandleDragStart(Table.PlayOne.ElementAt(0)))"/></div>
+                
+                </div>
+            }
+            
+            <div class="col-2 px-0">
+                <HiddenCard ClickEvent="@(async () => {await PullCards();})" />
+            </div>
+        }
+
+    </div>
+    <hr />
+    <div class="row mx-0">
+        @if (IsPlayerOne)
+        {
+            //Show PlayerOne (current player) stuff at the bottom
+            <div class="col-2 px-0">
+                <div>
+                    @{
+                        int cardCount = Table.PlayerOneDraw.Count;
+                    }
+                    @if (cardCount > 0)
+                    {
+                        <div>
+                            <HiddenCard ClickEvent="@(async () => {await Draw();})" />
+                        </div>
+                        
+                        <div>@Table.PlayerOneDraw.Count()</div>
+                    }
+                    @if (Table.PlayerOneDraw.Count == 0)
+                    {
+                        <div @*@onclick="ResetDrawPile" *@>
+                            <img height="auto" width="90%" src="cards/back.png">
+                        </div>
+                    }                    
+                </div>
+            </div>
+            @foreach (var card in Table.PlayerOneHand)
+            {
+                <div class="col-2 px-0">
+                    <DraggableCard Card="card" 
+                        HandleDragStartEvent="(() => HandleDragStart(card))" 
+                        />
+                </div>
+            }
+        }
+        else if (IsNotPlayerOne)
+        {
+            //Show PlayerTwo (current player) stuff at the bottom
+            <div class="col-2 px-0">
+                <div>
+                    @{
+                        int cardCount1 = Table.PlayerTwoDraw.Count;
+                    }
+                    @if (cardCount1 > 0)
+                    {
+
+                        <div class="d-flex align-items-center" >
+                            <HiddenCard ClickEvent="@(async () => {await Draw();})" />
+                        </div>
+                        <div>
+                            @Table.PlayerTwoDraw.Count()
+                        </div>
+                    }
+                    @if (Table.PlayerTwoDraw.Count == 0)
+                    {
+                        <div @*@onclick="ResetDrawPile" *@>
+                            <img height="auto" width="90%" src="cards/back.png">
+                        </div>
+                    }
+                </div>
+            </div>
+            @foreach (var card in Table.PlayerTwoHand)
+            {
+                <div class="col-2 px-0">
+                    <DraggableCard Card="card" 
+                        HandleDragStartEvent="(() => HandleDragStart(card))" 
+                        />
+                </div>
+            }
+        }
+    </div>
+    <hr />
+    <div>
+        <button type="button" class="btn btn-lg btn-outline-info" disabled="@pullEnabled" @onclick="() => PullButton()">Pull New Cards</button>
+    </div>
+}

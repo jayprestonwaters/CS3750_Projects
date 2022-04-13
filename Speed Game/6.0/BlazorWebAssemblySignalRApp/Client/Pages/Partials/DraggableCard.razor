@@ -1,0 +1,58 @@
+﻿@using BlazorWebAssemblySignalRApp.Shared.Models;
+@using BlazorWebAssemblySignalRApp.Shared.Models.Speed
+
+@code {
+
+    //The card represented by this component
+    [Parameter]
+    public Card Card { get; set; }
+
+    //The card currently being dragged
+    [Parameter]
+    public Card DraggedCard { get; set; }
+
+    [Parameter]
+    public EventCallback HandleDragStartEvent { get; set; }
+
+    [Parameter]
+    public EventCallback HandleDoubleClickEvent { get; set; }
+
+    [Parameter]
+    public EventCallback HandleDropEvent { get; set; }
+
+    [Parameter]
+    public string CssClass { get; set; }
+
+    public string AdditionalCss { get; set; }
+
+    public void CardDragEnter()
+    {
+        @if (DraggedCard != null)
+        {
+            bool isOneLessThan = (int)DraggedCard.Value == (((int)Card.Value) - 1);
+            bool isOneMoreThan = (int)DraggedCard.Value == (((int)Card.Value) + 1);
+
+            if (isOneMoreThan || isOneLessThan)
+            {
+                AdditionalCss = " speed-can-drop";
+            }
+        }
+    }
+
+    public void CardDragLeave()
+    {
+        AdditionalCss = "";
+    }
+}
+
+<img class="@CssClass @AdditionalCss"
+     height="auto" width="50%"
+     src="cards/@(Card.ImageName).png"
+     @ondragstart="HandleDragStartEvent"
+     @ondragend="StateHasChanged"
+     @ondragenter="CardDragEnter"
+     @ondragleave="CardDragLeave"
+     @ondrop="(async () => { await HandleDropEvent.InvokeAsync(this); AdditionalCss = null; })"
+     @ondrop:preventDefault="true"
+     @ondrop:stopPropagation="true"
+     ondragover="event.preventDefault();">

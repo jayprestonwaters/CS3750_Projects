@@ -1,0 +1,87 @@
+﻿@using BlazorWebAssemblySignalRApp.Shared.Models;
+@using BlazorWebAssemblySignalRApp.Shared.Models.Speed;
+@*@using static BlazorWebAssemblySignalRApp.Shared.Models.Speed.Table;*@
+
+
+@code {
+    [Parameter]
+    public Stack<Card> PlayPile_1 { get; set; }
+
+    [Parameter]
+    public Card Card { get; set; }
+
+    [Parameter]
+    public Card DraggedCard { get; set; }
+
+    [Parameter]
+    public EventCallback DragStartEvent { get; set; }
+
+    [Parameter]
+    public EventCallback MoveActiveCardEvent { get; set; }
+
+    private string CssClass { get; set; }
+
+    private string ImagePath { get; set; }
+
+    //If the dragged card can be dropped onto this card,
+    //add a special CSS class.
+    public void HandleDragEnter()
+    {
+        //bool isOneLessThan;
+        //isOneLessThan = ((int)DraggedCard.Value == (((int)PlayPile_1.Peek().Value) - 1));
+        //bool isOneMoreThan;
+        //isOneMoreThan = ((int)DraggedCard.Value == (((int)PlayPile_1.Peek().Value) + 1));
+
+        int diff;
+        diff = Math.Abs(DraggedCard.Value - PlayPile_1.Peek().Value);
+            //return diff == 1 || diff == 12;
+
+        if (diff == 1 || diff == 12)
+        {
+            CssClass = "speed-can-drop";
+        }
+        
+    }
+
+    //Once the dragged card leaves, always reset the CSS class.
+    public void HandleDragLeave()
+    {
+        CssClass = "";
+    }
+
+    public async Task HandleDrop()
+    {
+        CssClass = ""; //Reset the CSS
+
+        if (DraggedCard != null)
+        {
+
+            //bool isOneLessThan;
+            //isOneLessThan = ((int)DraggedCard.Value == (((int)PlayPile_1.Peek().Value) - 1));
+            //bool isOneMoreThan;
+            //isOneMoreThan = ((int)DraggedCard.Value == (((int)PlayPile_1.Peek().Value) + 1));
+            int diff;
+            diff = Math.Abs(DraggedCard.Value - PlayPile_1.Peek().Value);  
+
+
+            if (diff == 1 || diff == 12)
+            {
+                await MoveActiveCardEvent.InvokeAsync(PlayPile_1);
+            }
+        }
+    }
+}
+
+
+
+<div @ondragstart="DragStartEvent"
+     @ondragend="StateHasChanged"
+     @ondragenter="HandleDragEnter"
+     @ondragleave="HandleDragLeave"
+     @ondrop="HandleDrop"
+     @ondrop:preventDefault="true"
+     @ondrop:stopPropagation="true"
+     ondragover="event.preventDefault();">
+    <img height="auto" width="50%" class="speed-discards @CssClass"
+         src="cards/@(Card.ImageName).png" />
+</div>

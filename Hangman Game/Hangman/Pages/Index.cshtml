@@ -1,0 +1,39 @@
+﻿@page
+@model IndexModel
+@inject ApplicationDbContext _context
+@{
+    ViewData["Title"] = "Home page";
+    var session_username = HttpContext.Session.GetString("session_username");
+    var is_logged_in = HttpContext.Session.GetString("is_logged_in");
+    int numOfResults = 10;
+    var list = _context.Scores.OrderByDescending(s => s.Score).ThenByDescending(l => l.WordPlayed.Length).Take(numOfResults);
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    @if (session_username is not null)
+    {
+        <p>User: @session_username</p>
+    }  
+</div>
+
+<div class="text-center">
+    <h1>High Scores</h1>
+    <table class="table">
+        <tr>
+            <th>User Name</th>
+            <th>Word</th>
+            <th>Score</th>
+            <th>Length of Word</th>
+        </tr>
+    @foreach (var item in list)
+    {
+        <tr>
+            <td>@_context.Users.FirstOrDefault(u => u.Id == item.UserId).UserName</td>
+            <td>@item.WordPlayed</td>
+            <td>@item.Score</td>
+            <td>@item.WordPlayed.Length</td>
+        </tr>    
+    }
+    </table>
+</div>

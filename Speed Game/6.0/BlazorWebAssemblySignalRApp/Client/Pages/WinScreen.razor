@@ -1,0 +1,32 @@
+﻿@using Microsoft.AspNetCore.Mvc.RazorPages
+@inject NavigationManager NavigationManager
+@page "/win"
+@page "/win/{player}"
+
+@if (playerNum == 1)
+{
+    <div>Congratulations, Player 1!</div>
+}
+else if (playerNum == 2)
+{
+    <div>Congratulations, Player 2!</div>
+}
+<div class="row"> 
+        <button type="button" class="btn btn-lg btn-block btn-primary" @onclick="() => NewGame()">New Game</button>
+</div>
+<hr />
+
+@code {
+    int playerNum;
+    public string url = "/";
+    public void OnGet(int player)
+    {
+        playerNum = player;
+    }
+
+    private void NewGame()
+    {
+        NavigationManager.NavigateTo(url);
+    } 
+}
+
