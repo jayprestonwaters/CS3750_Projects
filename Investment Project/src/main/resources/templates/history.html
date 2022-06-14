@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" xmlns:="http://www.thymeleaf.org" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Stock History</title>
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript" th:inline="javascript">
+
+        // Load the Visualization API and the corechart package.
+        google.charts.load('current', {'packages':['corechart']});
+
+        // Set a callback to run when the Google Visualization API is loaded.
+        google.charts.setOnLoadCallback(drawChart);
+
+        // Callback that creates and populates a data table,
+        // instantiates the pie chart, passes in the data and
+        // draws it.
+        function drawChart() {
+
+            // Create the data table.
+            var appleData = new google.visualization.DataTable();
+            appleData.addColumn('string', 'Day');
+            appleData.addColumn('number', 'Price');
+
+            var microsoftData = new google.visualization.DataTable();
+            microsoftData.addColumn('string', 'Day');
+            microsoftData.addColumn('number', 'Price');
+
+            var teslaData = new google.visualization.DataTable();
+            teslaData.addColumn('string', 'Day');
+            teslaData.addColumn('number', 'Price');
+
+            // var historyData = new google.visualization.DataTable();
+            // historyData.addColumn('string', 'Day');
+            // historyData.addColumn('number', 'Price');
+
+            if ([[${applePrices}]]){
+                appleData.addRows([[${applePrices}]]);
+            }
+            if ([[${msPrices}]]){
+                microsoftData.addRows([[${msPrices}]]);
+            }
+            if ([[${teslaPrices}]]){
+                teslaData.addRows([[${teslaPrices}]]);
+            }
+
+            // if ([[${historyChartData}]]){
+            //     historyData.addRows([[${historyChartData}]]);
+            // }
+
+            // Set chart options
+            var appleOptions = {
+                title: 'Apple Stock History',
+                width: 600,
+                height: 400,
+                backgroundColor: '#343A40',
+                is3D: true,
+                titleTextStyle: {
+                    fontSize: 18,
+                    bold: true,
+                    italic: true,
+                    color: 'white',
+                },
+                legend: {
+                    textStyle: {
+                        fontSize: 14,
+                        color: 'white'
+                    }
+                },
+                hAxis: {
+                    textStyle: {
+                        color: '#FFF'
+                    }
+                },
+                vAxis: {
+                    textStyle: {
+                        color: '#FFF'
+                    }
+                }
+            };
+            var microsoftOptions = {
+                title: 'Microsoft Stock History',
+                width: 600,
+                height: 400,
+                backgroundColor: '#343A40',
+                is3D: true,
+                titleTextStyle: {
+                    fontSize: 18,
+                    bold: true,
+                    italic: true,
+                    color: 'white',
+                },
+                legend: {
+                    textStyle: {
+                        fontSize: 14,
+                        color: 'white'
+                    }
+                },
+                hAxis: {
+                    textStyle: {
+                        color: 'white'
+                    }
+                },
+                vAxis: {
+                    textStyle: {
+                        color: 'white'
+                    }
+                }
+            };
+            var teslaOptions = {
+                title:'Tesla Stock History',
+                width: 600,
+                height: 400,
+                backgroundColor: '#343A40',
+                is3D: true,
+                titleTextStyle: {
+                    fontSize: 18,
+                    bold: true,
+                    italic: true,
+                    color: 'white',
+                },
+                legend: {
+                    textStyle: {
+                        fontSize: 14,
+                        color: 'white'
+                    }
+                },
+                hAxis: {
+                    textStyle: {
+                        color: 'white'
+                    }
+                },
+                vAxis: {
+                    textStyle: {
+                        color: 'white'
+                    }
+                }
+            };
+            // var historyChartOptions = {
+            //     title: 'Stock History',
+            //     width: 600,
+            //     height: 400,
+            //     backgroundColor: '#343A40',
+            //     is3D: true,
+            //     titleTextStyle: {
+            //         fontSize: 18,
+            //         bold: true,
+            //         italic: true,
+            //         color: 'white',
+            //     },
+            //     legend: {
+            //         textStyle: {
+            //             fontSize: 14,
+            //             color: 'white'
+            //         }
+            //     },
+            //     hAxis: {
+            //         textStyle: {
+            //             color: '#FFF'
+            //         }
+            //     },
+            //     vAxis: {
+            //         textStyle: {
+            //             color: '#FFF'
+            //         }
+            //     }
+            // };
+
+
+            // Instantiate and draw our chart, passing in some options.
+            if ([[${applePrices}]]){
+                var appleChart = new google.visualization.LineChart(document.getElementById('apple_chart'));
+            }
+            if ([[${msPrices}]]){
+                var microsoftChart = new google.visualization.LineChart(document.getElementById('microsoft_chart'));
+            }
+            if ([[${teslaPrices}]]){
+                var teslaChart = new google.visualization.LineChart(document.getElementById('tesla_chart'));
+            }
+            //
+            // if ([[${historyChartData}]]){
+            //     var historyChart = new google.visualization.LineChart(document.getElementById('chart'));
+            // }
+
+            if ([[${applePrices}]]){
+                appleChart.draw(appleData, appleOptions);
+            }
+            if ([[${msPrices}]]){
+                microsoftChart.draw(microsoftData, microsoftOptions);
+            }
+
+            if ([[${teslaPrices}]]){
+                teslaChart.draw(teslaData, teslaOptions);
+            }
+            // if ([[${historyChartData}]]){
+            //     historyChart.draw(historyData, historyChartOptions);
+            // }
+        }
+    </script>
+</head>
+<body class="bg-secondary">
+    <div class="container-fluid">
+        <button type="button" class="btn btn-dark m-3" onclick="window.location='/'">Back</button>
+        <h1 class="text-center">History</h1>
+        <hr>
+        <div class="bg-dark text-secondary mb-3 py-3">
+            <h2 class="text-center">Current Return on Investment: <span class="text-primary" th:inline="text">$[[${totalReturn}]]</span></h2>
+            <h3 class="text-center">Total Investment: <span class="text-info" th:inline="text">$[[${totalInvestment}]]</span></h3>
+            <h4 class="text-center">Total Value: <span class="text-success" th:inline="text">$[[${totalValue}]]</span></h4>
+        </div>
+        <div class="row row-cols-3">
+            <div class="col my-3 d-flex justify-content-center" id="apple_chart" th:if="${applePrices != null}"></div>
+
+            <div class="col my-3 d-flex justify-content-center" id="microsoft_chart" th:if="${msPrices != null}"></div>
+
+            <div class="col my-3 d-flex justify-content-center" id="tesla_chart" th:if="${teslaPrices != null}"></div>
+        </div>
+    </div>
+</body>
+</html>

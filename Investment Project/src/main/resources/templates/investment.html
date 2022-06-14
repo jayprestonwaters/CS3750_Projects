@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" xmlns:="http://www.thymeleaf.org" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Make Investment</title>
+</head>
+<body class="bg-secondary">
+    <div class="container" th:if="${remaining > 0}">
+        <h1 class="text-center">Make Investment</h1>
+        <hr>
+        <div class="bg-dark p-3">
+            <div class="row text-center mt-2">
+                <h3 class="col text-secondary fw-bold">Investing in: <span class="text-primary" th:inline="text">[[${ticker_symbol}]]</span></h3>
+            </div>
+            <div class="row text-center mt-2">
+                <h5 class="col-6 text-secondary fw-bold">Starting Investment: <span class="text-success" th:inline="text">$[[${starting_investment}]]</span></h5>
+                <h5 class="col-6 text-secondary fw-bold">Remaining: <span class="text-info" th:inline="text">[[${remaining}]]%</span></h5>
+            </div>
+            <br>
+            <form id="form" method="POST" class="border border-primary" action="/" th:action="@{/investment}" th:object="${investment}">
+                <div class="row input-group d-flex justify-content-center my-3">
+                    <div class="col-7">
+                        <input type="range" class="form-control-range m-1 px-0 py-2" min="1" max="100" value="50" id="subdivision" form="form" name="subdivision" onInput="$('#rangeval').html($(this).val().concat('%')), $('#rangebadgeval').html(('&nbsp;&nbsp;').concat($(this).val().concat('%')))">
+                        <span class="text-secondary d-flex justify-content-center" id="rangebadgeval">&nbsp;&nbsp;50%<!-- Default value --></span>
+                    </div>
+                    <div class="col-3 d-flex align-items-center">
+                        <div class="border border-secondary text-muted m-1 p-2"><span class="text-info" id="rangeval">50%<!-- Default value --></span> of Starting Investment</div>
+                    </div>
+                    <input type="text" id="ticker_symbol" form="form" name="ticker_symbol" th:value="${ticker_symbol}" hidden>
+                </div>
+                <div class="d-flex justify-content-center align-items-center">
+                    <div class="row input-group p-3 mx-4">
+                        <button type="submit" class="col btn btn-primary mx-3">Submit</button>
+                        <button type="button" class="col btn btn-secondary mx-3" onclick="window.location='/'">Cancel</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="container p-3" th:if="${remaining == 0}">
+        <h1 class="text-center p-3 border border-dark text-warning">Error: Starting Investment has been depleted!</h1>
+        <script>
+            window.setTimeout(function () {
+                location.href = "/";
+            }, 2000); // refresh after two seconds
+        </script>
+    </div>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+</body>
+</html>
